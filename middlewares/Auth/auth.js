@@ -1,39 +1,74 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-exports.auth = async (req, res, next) => {
+const extractToken = (req) => {
+  return (
+    req.cookies?.token ||
+    req.body?.token ||
+    req.header("Authorization")?.replace("Bearer ", "").trim() ||
+    req.headers["x-access-token"]
+  );
+};
+
+exports.checkAuth = async (req, res, next) => {
   try {
-    // Extract token
-    const token =
-      req.cookies.token ||
-      req.body.token ||
-      req.header("Authorization")?.replace("Bearer ", "").trim();
+    const token = extractToken(req);
 
-    // If token is missing
     if (!token) {
-      return res.status(403).json({
-        success: false,
-        message: "Token is missing",
-      });
-    }
-
-    // Verify the token
-    try {
-      const decode = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decode; // attach user info to request
-    } catch (error) {
       return res.status(401).json({
         success: false,
-        message: "Token is invalid",
+        message: "Access denied. No token provided.",
       });
     }
 
-    next(); // allow request to proceed
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET is not defined in environment variables");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error",
+      });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decoded;
+    } catch (error) {
+      const messages = {
+        TokenExpiredError: "Token has expired",
+        JsonWebTokenError: "Invalid token",
+        NotBeforeError: "Token not active yet",
+      };
+
+      return res.status(401).json({
+        success: false,
+        message: messages[error.name] || "Token verification failed",
+      });
+    }
+
+    next();
   } catch (error) {
     console.error("Auth Middleware Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Something went wrong while validating the token",
+      message: "Internal server error during authentication",
     });
   }
 };
+
+// exports.checkAuth = (req, res, next) => {
+//   const token = req.headers.authorization?.split(" ")[1];
+
+//   if (!token) {
+//     return res.status(401).json({ message: "Unauthorized" });
+//   }
+
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     req.user = decoded; // user info will include id, role, etc.
+//     next();
+//   } catch (err) {
+//     return res.status(401).json({ message: "Invalid token" });
+//   }
+// };
+
+
