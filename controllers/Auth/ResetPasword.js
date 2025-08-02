@@ -3,9 +3,9 @@ const OTP = require('../../models/OTP');
 const User = require('../../models/User');
 const otpGenerator = require('otp-generator');
 
-exports.sendResetOTP= async(req , res)=>{
+exports.sendResendOTP= async(req , res)=>{
         try {
-            const {email} = req.body;
+            const {email,FullName} = req.body;
 
             if(!email){
                 res.status(401).json({
@@ -53,6 +53,17 @@ exports.sendResetOTP= async(req , res)=>{
         console.log(otpBody);
 
         // here we use node mailer to send the otp on the email 
+
+         const emailSubject = "Your Reset Password OTP Verification Code ";
+            const emailBody = PasswordUpdateTemplate(firstName || 'User' ,otp)
+
+            await mailSender(email , emailSubject, emailBody );
+
+            res.status(200).json({
+                success:true,
+                message:'Otp send Successfully',
+                otp: process.env.NODE_ENV === 'development' ? otp : undefined
+            }) ;
 
         // return the response
             res.status(200).json({
