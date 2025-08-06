@@ -31,9 +31,14 @@ const userSchema  = new mongoose.Schema({
         ref:"Profile",      
     },
     role: {
-    type: String,
-    enum: ['user'],
-    default: 'user'
-  }
+        type: String,
+        enum: ['user'],
+        default: 'user'
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    }
 },{ timestamps: true })
+
 module.exports=mongoose.model("User",userSchema);

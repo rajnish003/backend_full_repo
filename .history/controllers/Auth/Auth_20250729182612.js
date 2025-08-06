@@ -7,7 +7,7 @@ const Profile = require("../../models/Profile");
 const jwt = require("jsonwebtoken");
 const mailSender = require("../../utils/mailSender");
 const generateOTPEmailTemplate = require("../../mail/template/otpEmailTemplate");
-// const updatePassword = require("../../mail/template/updataPassword");
+const updatePassword = require("../../mail/template/updataPassword");
 
 // send Otp
 exports.sendOTP = async (req, res) => {

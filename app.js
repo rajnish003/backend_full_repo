@@ -22,7 +22,10 @@ app.use(bodyParser.json())
 app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Parse application/json
 app.use(express.urlencoded({ extended: true })); // Parse application/x-www-form-urlencoded
-app.use(cookieParser()); // when we 
+app.use(cookieParser()); // when we
+
+// Serve static files
+app.use(express.static('public')); 
 
 // Database connection
 require("./config/dbConnection").connect();
