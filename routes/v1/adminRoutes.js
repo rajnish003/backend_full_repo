@@ -4,10 +4,8 @@ const router = express.Router();
 const { 
   createUser, 
   getAllUsers, 
-  deleteUser, 
+  not_Active_deleteUser, 
   updateUser,
-  createAdmin,
-  getAllAdmins
 } = require("../../controllers/admin/adminController");
 
 const { 
@@ -25,10 +23,7 @@ router.use(checkAdminAuth);
 router.get("/users", canRead, getAllUsers);
 router.post("/users", canCreate, createUser);
 router.put("/users/:userId", canUpdate, updateUser);
-router.delete("/users/:userId", canDelete, deleteUser);
+router.delete("/users/:userId", canDelete, not_Active_deleteUser);
 
-// Admin management routes (super admin only)
-router.get("/admins", canRead, getAllAdmins);
-router.post("/admins", canCreate, createAdmin);
 
 module.exports = router; 

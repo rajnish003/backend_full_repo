@@ -9,7 +9,7 @@ const { adminLogin } = require("../../controllers/admin/adminController");
 
 // Auth router 
 router.post("/signup",signUp);
-router.post("/otp",sendOTP);
+// router.post("/otp",sendOTP);
 router.post("/login",login);
 
 // admin login 

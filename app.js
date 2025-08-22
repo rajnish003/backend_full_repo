@@ -30,6 +30,12 @@ app.use(express.static('public'));
 // Database connection
 require("./config/dbConnection").connect();
 
+// Redis connection
+const redisConnection = require("./config/redisConnection");
+redisConnection.connect().catch(err => {
+  console.error('Redis connection failed:', err);
+});
+
 // Routes
 // const mqttRoute = require("./routes/v1/mqttRoutes")
 
@@ -42,8 +48,13 @@ app.use((err, req, res, next) => {
 
 const authRoutes = require("./routes/v1/auth"); // Exported as router directly
 const adminRoutes = require("./routes/v1/adminRoutes")
+const redisRoutes = require("./routes/v1/redisRoutes")
+const otpServiceRoute = require("./routes/v1/otpServiceRoutes");
+
 app.use("/v1/auth", authRoutes); // Prefix /v1/auth for all auth-related endpoints
 app.use("/v1/admin", adminRoutes);
+app.use("/v1/redis", redisRoutes); // Redis management endpoints
+app.use("/v1/otp", otpServiceRoute); // OTP service endpoints
 // app.use("/v1/mqtt", mqttRoute); // Prefix /v1/mqtt for all auth-related endpoints
 
 
