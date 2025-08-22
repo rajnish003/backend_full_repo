@@ -18,10 +18,6 @@ exports.adminLogin = async (req, res) => {
       });
     }
 
-    // Debug: Check if ADMIN_JWT_SECRET exists
-    // console.log("ADMIN_JWT_SECRET exists:", !!process.env.ADMIN_JWT_SECRET);
-    // console.log("ADMIN_JWT_SECRET length:", process.env.ADMIN_JWT_SECRET?.length);
-    // console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
 
     // Find admin user
     const admin = await Admin.findOne({ email, isActive: true });
@@ -156,7 +152,7 @@ exports.getAllUsers = async (req, res) => {
 };
 
 // Delete User (Admin only)
-exports.deleteUser = async (req, res) => {
+exports.not_Active_deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -240,81 +236,82 @@ exports.updateUser = async (req, res) => {
   }
 };
 
+
 // Create Admin (Super Admin only)
-exports.createAdmin = async (req, res) => {
-  try {
-    const { fullname, email, password, permissions } = req.body;
+// exports.createAdmin = async (req, res) => {
+//   try {
+//     const { fullname, email, password, permissions } = req.body;
 
-    // Validate input
-    if (!fullname || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Fullname, email, and password are required",
-      });
-    }
+//     // Validate input
+//     if (!fullname || !email || !password) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Fullname, email, and password are required",
+//       });
+//     }
 
-    // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email });
-    if (existingAdmin) {
-      return res.status(400).json({
-        success: false,
-        message: "Admin with this email already exists",
-      });
-    }
+//     // Check if admin already exists
+//     const existingAdmin = await Admin.findOne({ email });
+//     if (existingAdmin) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Admin with this email already exists",
+//       });
+//     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create admin with custom permissions
-    const adminData = {
-      fullname,
-      email,
-      password: hashedPassword,
-      image: `https://api.dicebear.com/5.x/initials/svg?seed=${fullname}`,
-      permissions: permissions || {
-        create: true,
-        read: true,
-        update: true,
-        delete: true
-      }
-    };
+//     // Create admin with custom permissions
+//     const adminData = {
+//       fullname,
+//       email,
+//       password: hashedPassword,
+//       image: `https://api.dicebear.com/5.x/initials/svg?seed=${fullname}`,
+//       permissions: permissions || {
+//         create: true,
+//         read: true,
+//         update: true,
+//         delete: true
+//       }
+//     };
 
-    const admin = await Admin.create(adminData);
+//     const admin = await Admin.create(adminData);
 
-    // Remove password from response
-    admin.password = undefined;
+//     // Remove password from response
+//     admin.password = undefined;
 
-    return res.status(201).json({
-      success: true,
-      message: "Admin created successfully",
-      admin,
-    });
-  } catch (error) {
-    console.error("Create admin error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to create admin. Please try again.",
-    });
-  }
-};
+//     return res.status(201).json({
+//       success: true,
+//       message: "Admin created successfully",
+//       admin,
+//     });
+//   } catch (error) {
+//     console.error("Create admin error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to create admin. Please try again.",
+//     });
+//   }
+// };
 
 // // Get All Admins
-exports.getAllAdmins = async (req, res) => {
-  try {
-    const admins = await Admin.find({ isActive: true })
-      .select("-password");
+// exports.getAllAdmins = async (req, res) => {
+//   try {
+//     const admins = await Admin.find({ isActive: true })
+//       .select("-password");
 
-    return res.status(200).json({
-      success: true,
-      message: "Admins retrieved successfully",
-      admins,
-      count: admins.length,
-    });
-  } catch (error) {
-    console.error("Get admins error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to retrieve admins. Please try again.",
-    });
-  }
-}; 
+//     return res.status(200).json({
+//       success: true,
+//       message: "Admins retrieved successfully",
+//       admins,
+//       count: admins.length,
+//     });
+//   } catch (error) {
+//     console.error("Get admins error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to retrieve admins. Please try again.",
+//     });
+//   }
+// }; 

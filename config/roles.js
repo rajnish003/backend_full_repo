@@ -35,7 +35,7 @@ const canDelete = (role) => hasPermission(role, 'delete');
 
 module.exports = {
   roles,
-  hasPermission,//3
+  hasPermission,
   canCreate,
   canRead,
   canUpdate,
