@@ -2,7 +2,6 @@ const redis = require('redis');
 const dotenv = require('dotenv');
 
 dotenv.config();
-
 class RedisConnection {
   constructor() {
     this.client = null;
@@ -103,7 +102,7 @@ async get(key) {
     }
 }
 
-  async del(key) {
+async del(key) {
     try {
       if (!this.isConnected) {
         throw new Error('Redis not connected');
@@ -117,7 +116,7 @@ async get(key) {
     }
   }
 
-  async exists(key) {
+async exists(key) {
     try {
       if (!this.isConnected) {
         throw new Error('Redis not connected');
@@ -131,7 +130,7 @@ async get(key) {
     }
   }
 
-  async expire(key, seconds) {
+async expire(key, seconds) {
     try {
       if (!this.isConnected) {
         throw new Error('Redis not connected');
@@ -145,7 +144,7 @@ async get(key) {
     }
   }
 
-  async flushAll() {
+async flushAll() {
     try {
       if (!this.isConnected) {
         throw new Error('Redis not connected');
@@ -160,12 +159,12 @@ async get(key) {
   }
 
   // Get Redis client instance
-  getClient() {
+getClient() {
     return this.client;
   }
 
   // Check if Redis is connected
-  isRedisConnected() {
+isRedisConnected() {
     return this.isConnected;
   }
 }
