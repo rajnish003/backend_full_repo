@@ -158,7 +158,7 @@ async setOTP(email, otpData, expireTime) {
 }
 
 
-  async getOTP(email) {
+async getOTP(email) {
   try {
     const otpKey = `otp:${email}`;
     const data = await this.redis.get(otpKey);
@@ -169,7 +169,7 @@ async setOTP(email, otpData, expireTime) {
   }
 }
 
-  async deleteOTP(email) {
+async deleteOTP(email) {
     try {
       const otpKey = `otp:${email}`;
       return await this.redis.del(otpKey);
@@ -178,9 +178,8 @@ async setOTP(email, otpData, expireTime) {
       return false;
     }
   }
-
   // User tokens
-  async setUserToken(userId, token, expireTime = 86400) {
+async setUserToken(userId, token, expireTime = 86400) {
     try {
       const tokenKey = `user_token:${userId}`;
       return await this.redis.set(tokenKey, token, expireTime);
@@ -190,7 +189,7 @@ async setOTP(email, otpData, expireTime) {
     }
   }
 
-  async getUserToken(userId) {
+async getUserToken(userId) {
     try {
       const tokenKey = `user_token:${userId}`;
       return await this.redis.get(tokenKey);
@@ -200,7 +199,7 @@ async setOTP(email, otpData, expireTime) {
     }
   }
 
-  async deleteUserToken(userId) {
+async deleteUserToken(userId) {
     try {
       const tokenKey = `user_token:${userId}`;
       return await this.redis.del(tokenKey);
@@ -211,7 +210,7 @@ async setOTP(email, otpData, expireTime) {
   }
 
   // Blacklist tokens
-  async addToBlacklist(token, expireTime = 86400) {
+async addToBlacklist(token, expireTime = 86400) {
     try {
       const blacklistKey = `blacklist:${token}`;
       return await this.redis.set(blacklistKey, 'blacklisted', expireTime);
@@ -221,7 +220,7 @@ async setOTP(email, otpData, expireTime) {
     }
   }
 
-  async isBlacklisted(token) {
+async isBlacklisted(token) {
     try {
       const blacklistKey = `blacklist:${token}`;
       return await this.redis.exists(blacklistKey);
@@ -232,7 +231,7 @@ async setOTP(email, otpData, expireTime) {
   }
 
   // Queue management
-  async addToQueue(queueName, data) {
+async addToQueue(queueName, data) {
     try {
       const queueKey = `queue:${queueName}`;
       const client = this.redis.getClient();
@@ -247,7 +246,7 @@ async setOTP(email, otpData, expireTime) {
     }
   }
 
-  async getFromQueue(queueName) {
+async getFromQueue(queueName) {
     try {
       const queueKey = `queue:${queueName}`;
       const client = this.redis.getClient();
@@ -262,7 +261,7 @@ async setOTP(email, otpData, expireTime) {
     }
   }
 
-  async getQueueLength(queueName) {
+async getQueueLength(queueName) {
     try {
       const queueKey = `queue:${queueName}`;
       const client = this.redis.getClient();
@@ -277,7 +276,7 @@ async setOTP(email, otpData, expireTime) {
   }
 
   // Health check
-  async healthCheck() {
+async healthCheck() {
     try {
       if (!this.redis.isRedisConnected()) {
         return { status: 'disconnected', message: 'Redis not connected' };
@@ -292,7 +291,7 @@ async setOTP(email, otpData, expireTime) {
   }
 
   // Get Redis statistics
-  async getStats() {
+async getStats() {
     try {
       const client = this.redis.getClient();
       if (!client) return null;
