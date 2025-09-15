@@ -303,6 +303,39 @@ async getStats() {
       return null;
     }
   }
+
+  // ---- Temp user functions ----
+async setTempUser(email, userData, expiry = 600) {
+  try {
+    const key = `tempUser:${email}`;
+    return await this.redis.set(key, JSON.stringify(userData), expiry);
+  } catch (error) {
+    console.error("Redis setTempUser error:", error);
+    return false;
+  }
+}
+
+async getTempUser(email) {
+  try {
+    const key = `tempUser:${email}`;
+    const data = await this.redis.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error("Redis getTempUser error:", error);
+    return null;
+  }
+}
+
+async deleteTempUser(email) {
+  try {
+    const key = `tempUser:${email}`;
+    return await this.redis.del(key);
+  } catch (error) {
+    console.error("Redis deleteTempUser error:", error);
+    return false;
+  }
+}
+
 }
 
 module.exports = new RedisUtils(); 

@@ -2,7 +2,10 @@ const redisUtils = require('./redisUtils');
 const otpGenerator = require('otp-generator');
 const Otp = require('../models/OTP');
 const mailSender = require('../utils/mailSender');
-const generateOTPEmailTemplate = require('../mail/template/otpEmailTemplate'); 
+const generateOTPEmailTemplate = require('../mail/template/otpEmailTemplate');
+const  Profile = require('../models/Profile');
+const User = require('../models/User');
+const jwt = require("jsonwebtoken");
 class OTPService {
   constructor() {
     this.otpExpiry = 300; // 5 minutes in seconds
@@ -73,72 +76,76 @@ class OTPService {
   /*
     Verify OTP for email
    */
-async verifyOTP(email, otp) {
-    try {
-      // Get OTP data from Redis
-      let otpData = await redisUtils.getOTP(email);
+async verifyOtpRegister(email, otp) {
+  try {
+    let otpData = await redisUtils.getOTP(email);
 
-      if (!otpData) {
-        // If not in Redis, fallback to MongoDB
-        const record = await Otp.findOne({ email, otp });
-        if (!record) {
-          return {
-            success: false,
-            message: 'OTP not found or expired',
-          };
-        }
+    if (!otpData) {
+      const record = await Otp.findOne({ email, otp });
+      if (!record) {
+        return { success: false, message: "OTP not found or expired" };
+      }
+      await Otp.deleteOne({ _id: record._id });
+    }
 
-        // If found in DB but not Redis, delete it (OTP should be one-time)
-        await Otp.deleteOne({ _id: record._id });
-
-        return {
-          success: true,
-          message: 'OTP verified successfully (DB fallback)',
-          userData: { email },
-        };
+    // OTP matches
+    if ((otpData && otpData.otp === otp) || !otpData) {
+      //  Get temp user from Redis
+      const tempUser = await redisUtils.getTempUser(email);
+      if (!tempUser) {
+        return { success: false, message: "User session expired, please signup again" };
       }
 
-      // Check if max attempts exceeded
-      if (otpData.attempts >= otpData.maxAttempts) {
-        await redisUtils.deleteOTP(email);
-        return {
-          success: false,
-          message: 'Maximum OTP attempts exceeded. Please request a new OTP.',
-        };
-      }
+      // 1. Create profile
+      const profileDetails = await Profile.create({
+        gender: null,
+        contactNumber: null,
+      });
 
-      // Increment attempts
-      otpData.attempts += 1;
+      // 2. Create user
+      const user = await User.create({
+        fullname: tempUser.fullname,
+        phoneNo: tempUser.phoneNo,
+        email: tempUser.email,
+        password: tempUser.password, // already hashed
+        additionalDetails: profileDetails._id,
+        image: `https://api.dicebear.com/5.x/initials/svg?seed=${tempUser.fullname}`,
+        role: "user",
+      });
 
-      // Verify OTP
-      if (otpData.otp === otp) {
-        await redisUtils.deleteOTP(email); // delete from redis
-        await Otp.deleteOne({ email, otp }); // delete from DB
-        return {
-          success: true,
-          message: 'OTP verified successfully',
-          userData: {
-            email: otpData.email,
-            firstName: otpData.firstName,
-          },
-        };
-      } else {
-        await redisUtils.setOTP(email, otpData, this.otpExpiry); // update attempts
-        const remainingAttempts = otpData.maxAttempts - otpData.attempts;
-        return {
-          success: false,
-          message: `Invalid OTP. ${remainingAttempts} attempts remaining.`,
-        };
-      }
-    } catch (error) {
-      console.error('OTP verification error:', error);
+      // 3. Delete temp data + OTP
+      await redisUtils.deleteTempUser(email);
+      await redisUtils.deleteOTP(email);
+
+      // 4. Generate JWT
+      const token = jwt.sign(
+        { id: user._id, email: user.email, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "2h" }
+      );
+
       return {
-        success: false,
-        message: 'Failed to verify OTP',
-        error: error.message,
+        success: true,
+        message: "OTP verified & user registered successfully",
+        token,
+        user: {
+          id: user._id,
+          fullname: user.fullname,
+          email: user.email,
+          role: user.role,
+        },
       };
     }
+
+  } catch (error) {
+    console.error("OTP verification error:", error);
+    return {
+      success: false,
+      message: "Failed to verify OTP",
+      error: error.message,
+    };
   }
+}
 
   /*
    Resend OTP for email

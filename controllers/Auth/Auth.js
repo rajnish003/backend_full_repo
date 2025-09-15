@@ -9,6 +9,7 @@ const mailSender = require("../../utils/mailSender");
 const generateOTPEmailTemplate = require("../../mail/template/otpEmailTemplate");
 // const updatePassword = require("../../mail/template/updataPassword");
 const otpService = require("../../utils/otpService");
+const redisUtils = require("../../utils/redisUtils")
 
 // send Otp
 // exports.sendOTP = async (req, res) => {
@@ -91,27 +92,20 @@ const otpService = require("../../utils/otpService");
 
 
 // signup controller
+
 exports.signUp = async (req, res) => {
   try {
-    const { fullname, email, password, confirmPassword, otp } = req.body;
+    const { fullname, phoneNo, email, password } = req.body;
 
     // 1. Validate input
-    if (!fullname || !email || !password || !confirmPassword || !otp) {
+    if (!fullname || !phoneNo || !email || !password) {
       return res.status(403).json({
         success: false,
-        message: "All fields are required",
+        message: "All fields are required!",
       });
     }
 
-    // 2. Check password match
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Password and confirm password do not match. Try again.",
-      });
-    }
-
-    // 3. Check if user already exists
+    // 2. Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -120,72 +114,36 @@ exports.signUp = async (req, res) => {
       });
     }
 
-    // 4. Verify OTP (Redis first, fallback to DB)
-    const otpVerification = await otpService.verifyOTP(email, otp);
+    // 3. Hash the password but don't save user yet
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (!otpVerification.success) {
+    // 4. Save temporary user data in Redis 
+    await redisUtils.setTempUser(email, {
+      fullname,
+      phoneNo,
+      email,
+      password: hashedPassword,
+    }, 10 * 60); // expires in 10 min
+
+    // 5. Generate OTP
+    const otpGeneration = await otpService.generateOTP(email, fullname);
+    if (!otpGeneration.success) {
       return res.status(400).json({
         success: false,
-        message: otpVerification.message || "OTP verification failed",
+        message: otpGeneration.message || "Failed to generate OTP",
       });
     }
 
-    // 5. Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 6. Create profile
-    const profileDetails = await Profile.create({
-      gender: null,
-      contactNumber: null,
-    });
-
-    // 7. Create user
-    const user = await User.create({
-      fullname,
-      email,
-      password: hashedPassword,
-      contactNumber: null,
-      additionalDetails: profileDetails._id,
-      image: `https://api.dicebear.com/5.x/initials/svg?seed=${fullname}`,
-      role: "user", // static role
-    });
-
-    // 8. Generate JWT token
-    const payload = {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-    };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "2h",
-    });
-
-    // 9. Set token in cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
-      maxAge: 2 * 60 * 60 * 1000, // 2 hours
-    });
-
-    // 10. Send response
     return res.status(200).json({
       success: true,
-      message: "User registered successfully",
-      token,
-      user: {
-        id: user._id,
-        fullname: user.fullname,
-        email: user.email,
-        role: user.role,
-      },
+      message: "OTP sent to email. Please verify to complete registration.",
     });
+
   } catch (error) {
     console.error("Signup error:", error);
     return res.status(500).json({
       success: false,
-      message: "User cannot be registered. Please try again.",
+      message: "Something went wrong. Please try again.",
     });
   }
 };
@@ -323,3 +281,7 @@ exports.changepassword = async (req, res) => {
     });
   }
 };
+
+
+
+
